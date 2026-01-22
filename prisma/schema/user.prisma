@@ -1,0 +1,81 @@
+model User {
+    id                String    @id @default(uuid())
+    firstName         String
+    lastName          String
+    email             String    @unique
+    password          String
+    role              UserRole  @default(GUEST)
+    isVerified        Boolean   @default(false)
+    isActive          Boolean   @default(true)
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+    lastLoginAt       DateTime?
+    passwordChangedAt DateTime?
+    emailVerifiedAt   DateTime?
+    isDelete          Boolean   @default(false)
+    deletedAt         DateTime?
+
+    // Profile relations (one-to-one)
+    admin     Admin?
+    member    Member?
+    mentor    Mentor?
+    moderator Moderator?
+
+    // Indexes for better query performance
+    // Indexes for better query performance
+
+    @@index([role])
+    @@index([isActive])
+    @@map("users")
+}
+
+model Admin {
+    id           String     @id @default(uuid())
+    userId       String     @unique
+    adminLevel   AdminLevel @default(BASIC)
+    profileImage String?
+    user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    //   clubs      Club[]
+    @@index([userId])
+    @@map("admins")
+}
+
+model Member {
+    id           String  @id @default(uuid())
+    userId       String  @unique
+    studentId    String  @unique
+    departmentId String
+    sessionId    String
+    profileImage String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("members")
+}
+
+model Mentor {
+    id           String  @id @default(uuid())
+    userId       String  @unique
+    expertise    String
+    designation  String
+    experience   String
+    github       String?
+    linkedin     String?
+    portfolio    String?
+    profileImage String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    //   courses    Course[]
+
+    @@map("mentors")
+}
+
+model Moderator {
+    id     String @id @default(uuid())
+    userId String @unique
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("moderators")
+}

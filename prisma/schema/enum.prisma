@@ -1,0 +1,69 @@
+enum UserRole {
+    GUEST
+    ADMIN
+    MODERATOR
+    MEMBER
+    MENTOR
+}
+
+enum EventStatus {
+    DRAFT
+    UPCOMING
+    ONGOING
+    COMPLETED
+    CANCELLED
+}
+
+enum RegistrationStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
+    ATTENDED
+    NO_SHOW
+    WHITELISTED
+    REFUNDED
+    EXPIRED
+}
+
+enum PaymentType {
+    COURSE_ENROLLMENT
+    EVENT_REGISTRATION
+    MEMBERSHIP_SUBSCRIPTION // For future use
+    DONATION // For future use
+    PRODUCT_PURCHASE // For future use
+    OTHER
+}
+
+enum PaymentMethod {
+    CREDIT_CARD
+    DEBIT_CARD
+    PAYPAL
+    BANK_TRANSFER
+    CASH
+    MOBILE_WALLET
+    OTHER
+}
+
+enum PaymentStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    FAILED
+    REFUNDED
+    PARTIALLY_REFUNDED
+    CANCELLED
+    EXPIRED
+}
+
+enum EnrollmentStatus {
+    ACTIVE
+    COMPLETED
+    DROPPED
+    SUSPENDED
+}
+
+enum AdminLevel {
+    BASIC
+    SUPER
+    OWNER
+}
