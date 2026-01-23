@@ -7,39 +7,7 @@ import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 
 
 
-const registerAsGuest = async (payload: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-}) => {
-    // 🔐 Check email already exists
-    const existingUser = await prisma.user.findUnique({
-        where: { email: payload.email },
-    });
 
-    if (existingUser) {
-        throw new Error("Email already registered");
-    }
-
-    // 🔐 Hash password
-    const hashedPassword = await bcrypt.hash(payload.password, Number(envConfig.Salt_rounds));
-
-    // ✅ Create user securely
-    const result = await prisma.user.create({
-        data: {
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            email: payload.email,
-            password: hashedPassword,
-            role: "GUEST",
-        },
-    });
-
-    // ❌ Never return password
-    const { password, ...safeUser } = result;
-    return safeUser;
-};
 
 
 const getAllUsers = async (params: any, options: IOptions) => {
@@ -178,7 +146,7 @@ export const SoftDelete = async (id: string) => {
 
 
 export const UserService = {
-    registerAsGuest,
+
     getAllUsers,
     getMe,
     SoftDelete

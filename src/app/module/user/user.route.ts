@@ -6,16 +6,18 @@ import { auth } from '../../middleware/auth.js';
 
 
 const router = express.Router()
+
+
 router.get('/',
     auth(UserRole.ADMIN),
     userController.getAllUsers)
+
 
 router.get("/me",
     auth(),
     userController.getMe);
 
-router.post('/registration',
-    userController.registerAsGuest)
+
 
 router.patch('/soft-delete/:id',
     auth(UserRole.ADMIN),

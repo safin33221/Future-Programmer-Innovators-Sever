@@ -1,27 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
-import catchAsync from "../../shared/catchAsync";
+import catchAsync from "../../shared/catchAsync.js";
+import { UserService } from "./user.service.js";
+import sendResponse from "../../shared/sendResponse.js";
+import { statusCode } from "../../shared/statusCode.js";
+import pick from "../../helper/pick.js";
+import { userFilterableFields } from "./user.constant.js";
+import { AuthRequest } from "../../middleware/auth.js";
 
-import sendResponse from "../../shared/sendResponse";
-import { statusCode } from "../../shared/statusCode";
-import { UserService } from "./user.service";
-import pick from "../../helper/pick";
-import { userFilterableFields } from "./user.constant";
-import type { AuthRequest } from "../../middleware/auth";
 
 
-/* =========================
-   Register User
-========================= */
-const registerAsGuest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const result = await UserService.registerAsGuest(req.body)
-
-    sendResponse(res, {
-        status: statusCode.OK,
-        success: true,
-        message: "registration successful",
-        data: result
-    })
-})
 
 
 /* =========================
@@ -71,7 +58,7 @@ const SoftDelete = catchAsync(async (req: Request, res: Response) => {
 
 
 export const userController = {
-    registerAsGuest,
+
     getAllUsers,
     getMe,
     SoftDelete

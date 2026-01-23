@@ -5,6 +5,27 @@ import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { statusCode } from "../../shared/statusCode.js";
 
+
+
+
+/* =========================
+   Register User
+========================= */
+const registerAsGuest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const result = await AuthService.registerAsGuest(req.body)
+
+    sendResponse(res, {
+        status: statusCode.OK,
+        success: true,
+        message: "registration successful",
+        data: result
+    })
+})
+
+/* =========================
+   login User
+========================= */
+
 const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const result = await AuthService.login(req.body)
     const { accessToken, refreshToken, user } = result
@@ -29,5 +50,6 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
 })
 
 export const authController = {
-    login
+    login,
+    registerAsGuest
 }
