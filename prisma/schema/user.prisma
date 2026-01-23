@@ -23,6 +23,7 @@ model User {
 
     // Indexes for better query performance
     // Indexes for better query performance
+    notices Notice[]
 
     @@index([role])
     @@index([isActive])

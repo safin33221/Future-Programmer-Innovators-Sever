@@ -1,9 +1,13 @@
-import { ZodObject } from "zod";
+import { ZodError, ZodTypeAny } from "zod";
 import { Request, Response, NextFunction } from "express";
 
 export const validateRequest =
-    (schema: ZodObject) =>
-        async (req: Request, res: Response, next: NextFunction) => {
+    (schema: ZodTypeAny) =>
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
             try {
                 await schema.parseAsync({
                     body: req.body,
@@ -12,11 +16,16 @@ export const validateRequest =
                 });
 
                 next();
-            } catch (error: any) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Validation error",
-                    errors: error.errors,
-                });
+            } catch (error) {
+                if (error instanceof ZodError) {
+                    res.status(400).json({
+                        success: false,
+                        message: "Validation error",
+                        errors: error.issues, // ✅ correct
+                    });
+                    return;
+                }
+
+                next(error);
             }
         };

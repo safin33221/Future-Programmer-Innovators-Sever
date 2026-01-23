@@ -1,14 +1,22 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import envConfig from "../config/env.config.js";
-
-
 
 /* =========================
    Types
 ========================= */
 export interface AuthRequest extends Request {
-    user?: JwtPayload;
+    user?: {
+        id: string;
+        email: string;
+        role: string;
+    };
+}
+
+interface AccessTokenPayload {
+    id: string;
+    email: string;
+    role: string;
 }
 
 /* =========================
@@ -18,7 +26,7 @@ export const auth =
     (...requiredRoles: string[]) =>
         async (req: AuthRequest, res: Response, next: NextFunction) => {
             try {
-                const token = req.cookies.accessToken
+                const token = req.cookies.accessToken;
 
                 if (!token) {
                     return res.status(401).json({
@@ -30,9 +38,14 @@ export const auth =
                 const decoded = jwt.verify(
                     token,
                     envConfig.JWT.JWT_ACCESS_SECRET as string
-                ) as JwtPayload;
+                ) as AccessTokenPayload;
 
-                req.user = decoded;
+                // ✅ EXPLICIT assignment (THIS FIXES EVERYTHING)
+                req.user = {
+                    id: decoded.id,
+                    email: decoded.email,
+                    role: decoded.role,
+                };
 
                 if (
                     requiredRoles.length &&
