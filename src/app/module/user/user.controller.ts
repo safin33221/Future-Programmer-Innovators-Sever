@@ -9,19 +9,6 @@ import { AuthRequest } from "../../middleware/auth.js";
 
 
 
-/* =========================
-   Register User
-========================= */
-const registerAsGuest = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const result = await UserService.registerAsGuest(req.body)
-
-    sendResponse(res, {
-        status: statusCode.OK,
-        success: true,
-        message: "registration successful",
-        data: result
-    })
-})
 
 
 /* =========================
@@ -71,7 +58,7 @@ const SoftDelete = catchAsync(async (req: Request, res: Response) => {
 
 
 export const userController = {
-    registerAsGuest,
+
     getAllUsers,
     getMe,
     SoftDelete

@@ -6,6 +6,9 @@ import { loginSchema } from "./auth.validation.js";
 
 const router = express.Router()
 //login
+router.post('/registration',
+    authController.registerAsGuest)
+
 router.post('/login',
     // validateRequest(loginSchema),
     authController.login)
