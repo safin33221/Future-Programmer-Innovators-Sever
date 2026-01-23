@@ -47,7 +47,7 @@ const login = async (payload: { email: string; password: string }) => {
     });
 
     if (!user) {
-        throw new Error("Account Not found");
+        throw new Error("Account not found");
     }
 
     // 2️⃣ Check account status
@@ -62,34 +62,39 @@ const login = async (payload: { email: string; password: string }) => {
     );
 
     if (!isPasswordMatch) {
-        throw new Error("Invalid Your password");
+        throw new Error("Invalid password");
     }
 
-
-
-
-    const JwtPayload = {
-        userID: user.id,
+    // 4️⃣ JWT payload (✅ MUST MATCH auth middleware)
+    const jwtPayload = {
+        id: user.id,          // ✅ FIXED
         email: user.email,
-        role: user.role
+        role: user.role,
+    };
 
-    } as JwtPayload
-    const accessToken = jwtHelper.generateToken(JwtPayload, envConfig.JWT.JWT_ACCESS_SECRET, envConfig.JWT.JWT_ACCESS_EXPIRES_IN as string)
-    const refreshToken = jwtHelper.generateToken(JwtPayload, envConfig.JWT.JWT_REFRESH_SECRET, envConfig.JWT.JWT_REFRESH_EXPIRES_IN as string)
+    const accessToken = jwtHelper.generateToken(
+        jwtPayload,
+        envConfig.JWT.JWT_ACCESS_SECRET,
+        envConfig.JWT.JWT_ACCESS_EXPIRES_IN as string
+    );
+
+    const refreshToken = jwtHelper.generateToken(
+        jwtPayload,
+        envConfig.JWT.JWT_REFRESH_SECRET,
+        envConfig.JWT.JWT_REFRESH_EXPIRES_IN as string
+    );
 
     // 5️⃣ Remove sensitive fields
-
-
     const { password, ...safeUser } = user;
 
     // 6️⃣ Return response
     return {
         user: safeUser,
         accessToken,
-        refreshToken
-
+        refreshToken,
     };
 };
+
 
 export const AuthService = {
     login,

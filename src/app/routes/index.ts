@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import { AuthRoute } from '../module/auth/auth.route.js';
 import { UserRoute } from '../module/user/user.route.js';
+import { NoticeRoute } from '../module/notice/notice.route.js';
 
 
 const router: Router = express.Router()
@@ -14,6 +15,10 @@ const moduleRoutes = [
     {
         path: '/user',
         route: UserRoute
+    },
+    {
+        path: '/notices',
+        route: NoticeRoute
     },
     // {
     //     path: '/otp',
