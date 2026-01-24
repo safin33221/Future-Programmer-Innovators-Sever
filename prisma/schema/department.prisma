@@ -1,0 +1,15 @@
+model Department {
+    id   String @id @default(uuid())
+    name String @unique
+
+    members            Member[]
+    memberApplications MemberApplication[]
+}
+
+model Session {
+    id   String @id @default(uuid())
+    name String @unique
+
+    members            Member[]
+    memberApplications MemberApplication[]
+}
