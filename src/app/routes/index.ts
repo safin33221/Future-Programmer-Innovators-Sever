@@ -4,6 +4,7 @@ import { UserRoute } from '../module/user/user.route.js';
 import { NoticeRoute } from '../module/notice/notice.route.js';
 import { MemberRoute } from '../module/member/member.route.js';
 import { OtpRoute } from '../module/otp/otp.route.js';
+import { DepartmentRoute } from '../module/department/department.route.js';
 
 
 const router: Router = express.Router()
@@ -29,6 +30,10 @@ const moduleRoutes = [
     {
         path: '/otp',
         route: OtpRoute
+    },
+    {
+        path: '/department',
+        route: DepartmentRoute
     },
 ]
 
