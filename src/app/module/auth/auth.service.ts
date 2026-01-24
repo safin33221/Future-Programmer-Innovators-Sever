@@ -3,6 +3,7 @@ import { type JwtPayload } from "jsonwebtoken";
 import prisma from "../../../lib/prisma.js";
 import { jwtHelper } from "../../helper/jwtHelper.js";
 import envConfig from "../../config/env.config.js";
+import { date } from "zod/mini";
 
 
 
@@ -24,6 +25,14 @@ const registerAsGuest = async (payload: {
     // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(payload.password, Number(envConfig.Salt_rounds));
 
+    console.log({
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        password: hashedPassword,
+        role: "GUEST",
+        isVerified: true
+    });
     // ✅ Create user securely
     const result = await prisma.user.create({
         data: {
@@ -32,6 +41,8 @@ const registerAsGuest = async (payload: {
             email: payload.email,
             password: hashedPassword,
             role: "GUEST",
+            isVerified: true,
+            emailVerifiedAt: new Date()
         },
     });
 
