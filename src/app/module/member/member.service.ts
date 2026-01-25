@@ -2,18 +2,22 @@ import prisma from "../../../lib/prisma.js";
 import { Prisma, ApplicationStatus } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 import { memberApplicationSearchableFields } from "./member.constant.js";
+import ApiError from "../../errors/ApiError.js";
+import { statusCode } from "../../shared/statusCode.js";
 
 
 /**
  * MEMBER → Apply for membership
  */
-const createApplication = async (userId: string, payload: any) => {
+const createMemberApplication = async (userId: string, payload: any) => {
+    console.log({ userId });
     const exists = await prisma.memberApplication.findUnique({
         where: { userId },
     });
 
+    console.log({ exists });
     if (exists) {
-        throw new Error("You have already applied for membership");
+        throw new ApiError(statusCode.NOT_ACCEPTABLE, "You have already applied for membership");
     }
 
     return prisma.memberApplication.create({
@@ -160,7 +164,7 @@ const rejectApplication = async (applicationId: string) => {
 };
 
 export const MemberService = {
-    createApplication,
+    createMemberApplication,
     getAllApplications,
     approveApplication,
     rejectApplication,

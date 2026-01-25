@@ -9,12 +9,12 @@ const router = express.Router();
    MEMBER → Apply for Membership
 ========================= */
 router.post(
-    "/apply",
+    "/create-member-application",
     auth(UserRole.GUEST),
-    MemberController.applyForMembership
+    MemberController.createMemberApplication
 );
 
-/* =========================
+/* =========================    
    ADMIN → Get All Applications
 ========================= */
 router.get(

@@ -11,10 +11,10 @@ import { memberApplicationSearchableFields } from "./member.constant.js";
 /* =========================
    MEMBER → Apply for Membership
 ========================= */
-const applyForMembership = catchAsync(
+const createMemberApplication = catchAsync(
     async (req: AuthRequest, res: Response) => {
         const userId = req.user!.id;
-        const result = await MemberService.createApplication(userId, req.body);
+        const result = await MemberService.createMemberApplication(userId, req.body);
 
         sendResponse(res, {
             status: statusCode.CREATED,
@@ -81,7 +81,7 @@ const rejectApplication = catchAsync(
 );
 
 export const MemberController = {
-    applyForMembership,
+    createMemberApplication,
     getAllApplications,
     approveApplication,
     rejectApplication,
