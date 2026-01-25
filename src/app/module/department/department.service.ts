@@ -39,9 +39,13 @@ const getDepartmentById = async (id: string) => {
     });
 };
 
-const deleteDepartment = async (id: string) => {
-    return prisma.department.delete({
+const softDeleteDepartment = async (id: string) => {
+    return prisma.department.update({
         where: { id },
+        data: {
+            isDeleted: true
+        }
+
     });
 };
 
@@ -49,5 +53,5 @@ export const DepartmentService = {
     createDepartment,
     getAllDepartments,
     getDepartmentById,
-    deleteDepartment,
+    softDeleteDepartment,
 };

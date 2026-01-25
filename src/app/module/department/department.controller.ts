@@ -55,9 +55,9 @@ const getDepartmentById = catchAsync(
 /* =========================
    Delete Department
 ========================= */
-const deleteDepartment = catchAsync(
+const softDeleteDepartment = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
-        await DepartmentService.deleteDepartment(req.params.id as string);
+        await DepartmentService.softDeleteDepartment(req.params.id as string);
 
         sendResponse(res, {
             status: statusCode.OK,
@@ -71,5 +71,5 @@ export const DepartmentController = {
     createDepartment,
     getDepartments,
     getDepartmentById,
-    deleteDepartment,
+    softDeleteDepartment,
 };

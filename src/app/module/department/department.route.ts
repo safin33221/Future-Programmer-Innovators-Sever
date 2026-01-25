@@ -12,8 +12,8 @@ router.get("/", DepartmentController.getDepartments);
 router.get("/:id",
     auth(UserRole.ADMIN),
     DepartmentController.getDepartmentById);
-router.delete("/:id",
+router.patch("/:id",
     auth(UserRole.ADMIN),
-    DepartmentController.deleteDepartment);
+    DepartmentController.softDeleteDepartment);
 
 export const DepartmentRoute: Router = router;
