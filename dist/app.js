@@ -1,12 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import router from './app/routes/index.js';
+import cookieParser from 'cookie-parser';
+import globalErrorHandler from './app/middleware/globalErrorHandler.js';
 const app = express();
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+app.use('/api/v1', router);
 /* -------------------- HEALTH CHECK -------------------- */
 app.get('/', (req, res) => {
     res.status(200).json({
@@ -14,6 +20,8 @@ app.get('/', (req, res) => {
         message: 'Server is running 🚀',
     });
 });
+/* -------------------- Global Error Handler  -------------------- */
+app.use(globalErrorHandler);
 /* -------------------- NOT FOUND -------------------- */
 app.use((req, res) => {
     res.status(404).json({

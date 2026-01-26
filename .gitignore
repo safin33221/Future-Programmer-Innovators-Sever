@@ -3,8 +3,12 @@ node_modules
 .env
 
 /generated/prisma
-prisma.config.js
-prisma.config.js.map
-prisma.config.d.ts
-prisma.config.d.ts.map
 
+.vercel
+
+dist/
+.env
+.env.local
+uploads/*
+!uploads/.gitkeep
+*.log
