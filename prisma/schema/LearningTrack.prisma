@@ -1,0 +1,60 @@
+model LearningTrack {
+    id         String     @id @default(uuid())
+    name       String
+    slug       String     @unique
+    shortDesc  String
+    longDesc   String // details page main content
+    icon       String?
+    difficulty TrackLevel
+    duration   String // e.g. "6 Months"
+    isActive   Boolean    @default(true)
+
+    topics   TrackTopic[]
+    roadmaps TrackRoadmap[]
+    careers  TrackCareer[]
+    tools    TrackTool[]
+
+    members      Member[]
+    applications MemberApplication[]
+    deletedAt    DateTime            @default(now())
+    isDeleted    Boolean             @default(false)
+    createdAt    DateTime            @default(now())
+    updatedAt    DateTime            @updatedAt
+}
+
+model TrackTopic {
+    id      String @id @default(uuid())
+    trackId String
+    title   String
+    order   Int
+
+    track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model TrackRoadmap {
+    id          String @id @default(uuid())
+    trackId     String
+    phase       String // Beginner / Intermediate / Advanced
+    description String
+    order       Int
+
+    track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model TrackCareer {
+    id      String @id @default(uuid())
+    trackId String
+    role    String // Frontend Developer
+    details String
+
+    track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model TrackTool {
+    id      String  @id @default(uuid())
+    trackId String
+    name    String // React, Node.js, Git
+    icon    String?
+
+    track LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}

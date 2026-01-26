@@ -51,9 +51,11 @@ model Member {
     sessionId    String
     profileImage String?
 
-    user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-    department Department @relation(fields: [departmentId], references: [id])
-    session    Session    @relation(fields: [sessionId], references: [id])
+    user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+    department      Department     @relation(fields: [departmentId], references: [id])
+    session         Session        @relation(fields: [sessionId], references: [id])
+    learningTrack   LearningTrack? @relation(fields: [learningTrackId], references: [id])
+    learningTrackId String?
 
     @@map("members")
 }

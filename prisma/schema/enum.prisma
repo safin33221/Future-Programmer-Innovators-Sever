@@ -73,3 +73,9 @@ enum ApplicationStatus {
     APPROVED
     REJECTED
 }
+
+enum TrackLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+}

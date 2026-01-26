@@ -6,6 +6,7 @@ import { MemberRoute } from '../module/member/member.route.js';
 import { OtpRoute } from '../module/otp/otp.route.js';
 import { DepartmentRoute } from '../module/department/department.route.js';
 import { SessionRoute } from '../module/session/session.route.js';
+import { LearningTrackRoute } from '../module/learningTrack/learningTrack.route.js';
 
 
 
@@ -40,6 +41,10 @@ const moduleRoutes = [
     {
         path: '/sessions',
         route: SessionRoute
+    },
+    {
+        path: '/learning-tracks',
+        route: LearningTrackRoute
     },
 ]
 
