@@ -1,13 +1,7 @@
-import bcrypt from "bcrypt";
-import envConfig from "../../config/env.config.js";
 import { userSearchableFields } from "./user.constant.js";
 import prisma from "../../../lib/prisma.js";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
-
-
-
-
 
 
 const getAllUsers = async (params: any, options: IOptions) => {
@@ -84,54 +78,93 @@ const getAllUsers = async (params: any, options: IOptions) => {
 
 const getMe = async (email: string) => {
     const user = await prisma.user.findUnique({
-        where: { email },
+        where: {
+            email,
+            isDelete: false
+        },
         include: {
             admin: true,
             mentor: true,
             moderator: true,
-            member: true
-
+            member: {
+                include: {
+                    department: true,
+                    session: true,
+                    learningTrack: {
+                        select: {
+                            id: true,
+                            name: true,
+                            slug: true
+                        }
+                    }
+                }
+            }
         },
-    })
+    });
 
     if (!user) {
         throw new Error("User not found");
     }
 
-    let profile = null
+    let roleSpecificData = null;
 
     switch (user.role) {
-
-        case "ADMIN": {
-            profile = user.admin
-        }
-        case "MEMBER": {
-            profile = user.member
-        }
-        case "MODERATOR": {
-            profile = user.moderator
-        }
-
+        case "ADMIN":
+            roleSpecificData = {
+                adminLevel: user.admin?.adminLevel,
+                permissions: user.admin?.permissions || []
+            };
+            break;
+        case "MEMBER":
+            roleSpecificData = {
+                studentId: user.member?.studentId,
+                department: user.member?.department,
+                session: user.member?.session,
+                learningTrack: user.member?.learningTrack,
+                batch: user.member?.batch,
+                skills: user.member?.skills || [],
+                github: user.member?.github,
+                linkedin: user.member?.linkedin
+            };
+            break;
+        case "MENTOR":
+            roleSpecificData = {
+                expertise: user.mentor?.expertise,
+                designation: user.mentor?.designation,
+                company: user.mentor?.company,
+                experience: user.mentor?.experience,
+                github: user.mentor?.github,
+                linkedin: user.mentor?.linkedin
+            };
+            break;
+        case "MODERATOR":
+            roleSpecificData = {
+                permissions: user.moderator?.permissions || [],
+                moderationLevel: user.moderator?.moderationLevel
+            };
+            break;
     }
-
-
 
     return {
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`,
         email: user.email,
+        phone: user.phone,
+        bio: user.bio,
+        profileImage: user.profileImage,
         role: user.role,
         isVerified: user.isVerified,
         isActive: user.isActive,
-        profile,
+        lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        profile: roleSpecificData
     };
-
 };
 
-export const SoftDelete = async (id: string) => {
+const SoftDelete = async (id: string) => {
     return await prisma.user.update({
         where: { id },
         data: {
@@ -141,6 +174,8 @@ export const SoftDelete = async (id: string) => {
         },
     });
 };
+
+
 
 
 
