@@ -68,6 +68,12 @@ enum AdminLevel {
     OWNER
 }
 
+enum moderationLevel {
+    BASIC
+
+    SENIOR
+}
+
 enum ApplicationStatus {
     PENDING
     APPROVED

@@ -1,78 +1,119 @@
 model User {
-    id                String    @id @default(uuid())
-    firstName         String
-    lastName          String
-    email             String    @unique
-    password          String
-    role              UserRole  @default(GUEST)
-    isVerified        Boolean   @default(false)
-    isActive          Boolean   @default(true)
+    id        String @id @default(uuid())
+    // Core Identity
+    firstName String
+    lastName  String
+    email     String @unique
+    password  String
+
+    // Authentication & Status
+    role       UserRole @default(GUEST)
+    isVerified Boolean  @default(false)
+    isActive   Boolean  @default(true)
+    isDelete   Boolean  @default(false)
+
+    // Timestamps
     createdAt         DateTime  @default(now())
     updatedAt         DateTime  @updatedAt
     lastLoginAt       DateTime?
     passwordChangedAt DateTime?
     emailVerifiedAt   DateTime?
-    isDelete          Boolean   @default(false)
     deletedAt         DateTime?
 
-    // Profile relations (one-to-one)
+    // COMMON PROFILE FIELDS (moved from role tables)
+    profileImage String? // Store all profile images here
+    phone        String? // Common for all roles
+    bio          String? // Short bio for all
+
+    // Role-specific relations (one-to-one)
     admin     Admin?
     member    Member?
     mentor    Mentor?
     moderator Moderator?
 
-    // Indexes for better query performance
-    // Indexes for better query performance
+    // Relations
     notices           Notice[]
     memberApplication MemberApplication?
 
+    // Indexes
     @@index([role])
     @@index([isActive])
+    @@index([email])
     @@map("users")
 }
 
 model Admin {
-    id           String     @id @default(uuid())
-    userId       String     @unique
-    adminLevel   AdminLevel @default(BASIC)
-    profileImage String?
-    user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    id         String     @id @default(uuid())
+    userId     String     @unique
+    adminLevel AdminLevel @default(BASIC)
 
-    //   clubs      Club[]
-    @@index([userId])
+    // Admin-specific fields
+    permissions String[] // JSON array of permissions
+    department  String? // Which department they manage
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
     @@map("admins")
 }
 
 model Member {
-    id           String  @id @default(uuid())
-    userId       String  @unique
-    studentId    String  @unique
-    departmentId String
-    sessionId    String
-    profileImage String?
+    id     String @id @default(uuid())
+    userId String @unique
 
+    // Academic Info
+    studentId      String  @unique
+    departmentId   String
+    sessionId      String
+    batch          String? // e.g., "2022-23"
+    registrationNo String? // University registration number
+
+    // Member-specific
+    skills    String[] // JSON array of skills
+    interests String[] // JSON array of interests
+    github    String?
+    linkedin  String?
+    portfolio String?
+
+    // Relations
     user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
     department      Department     @relation(fields: [departmentId], references: [id])
     session         Session        @relation(fields: [sessionId], references: [id])
     learningTrack   LearningTrack? @relation(fields: [learningTrackId], references: [id])
     learningTrackId String?
 
+    // Additional relations
+    // enrollments Enrollment[]
+    // submissions Submission[]
+
     @@map("members")
 }
 
 model Mentor {
-    id           String  @id @default(uuid())
-    userId       String  @unique
-    expertise    String
-    designation  String
-    experience   String
-    github       String?
-    linkedin     String?
-    portfolio    String?
-    profileImage String?
+    id     String @id @default(uuid())
+    userId String @unique
+
+    // Professional Info
+    expertise    String // Primary expertise
+    subExpertise String[] // JSON array of sub-expertise areas
+    designation  String // Job title
+    company      String? // Current company
+    experience   String // e.g., "5 years"
+
+    // Contact & Links
+    github    String?
+    linkedin  String?
+    portfolio String?
+    website   String?
+
+    // Mentor-specific
+    hourlyRate   Float? // If paid mentoring
+    availability String? // e.g., "Weekdays 9-5"
+    maxMentees   Int? // Maximum mentees they can handle
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-    //   courses    Course[]
+
+    // Relations
+    // mentorSessions MentorSession[]
 
     @@map("mentors")
 }
@@ -80,6 +121,11 @@ model Mentor {
 model Moderator {
     id     String @id @default(uuid())
     userId String @unique
+
+    // Moderator-specific
+    permissions     String[]
+    assignedForums  String[]
+    moderationLevel moderationLevel @default(BASIC)
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
