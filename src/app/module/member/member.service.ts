@@ -126,7 +126,7 @@ const approveApplication = async (applicationId: string) => {
                 studentId: application.studentId,
                 departmentId: application.departmentId,
                 sessionId: application.sessionId,
-                profileImage: application.profileImage,
+
             },
         });
 

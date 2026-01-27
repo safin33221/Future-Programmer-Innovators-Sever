@@ -2,6 +2,7 @@ import "dotenv/config";
 import prisma from './lib/prisma.js';
 import app from './app.js';
 import { connectRedis } from "./app/config/redis.config.js";
+import seedSuperAdmin from "./app/helper/seed.js";
 const PORT = process.env.PORT || 5000;
 async function bootstrap() {
     try {
@@ -19,6 +20,7 @@ async function bootstrap() {
 (async () => {
     connectRedis();
     bootstrap();
+    seedSuperAdmin();
 })();
 process.on('SIGINT', async () => {
     await prisma.$disconnect();
