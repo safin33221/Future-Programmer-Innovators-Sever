@@ -78,15 +78,15 @@ const createLearningTrack = async (payload: any) => {
 }
 
 
-
 export const getAllLearningTracks = async (params: any, options: IOptions) => {
-    const { page = 1, limit = 10, skip = 0, sortBy = 'createdAt', sortOrder = 'desc' } =
+    const { page, limit, skip, sortBy, sortOrder } =
         paginationHelper.calculatePagination(options);
 
     const { searchTerm, ...filterData } = params;
 
     const andConditions: Prisma.LearningTrackWhereInput[] = [];
 
+    // Search across multiple fields
     if (searchTerm) {
         andConditions.push({
             OR: learningTrackSearchableFields.map((field) => ({
@@ -98,11 +98,12 @@ export const getAllLearningTracks = async (params: any, options: IOptions) => {
         });
     }
 
+    // Add filters
     if (Object.keys(filterData).length > 0) {
         const filterConditions: Prisma.LearningTrackWhereInput[] = [];
 
         Object.keys(filterData).forEach((key) => {
-            if (filterData[key]) {
+            if (filterData[key] !== undefined && filterData[key] !== '') {
                 filterConditions.push({
                     [key]: {
                         equals: filterData[key],
@@ -116,10 +117,15 @@ export const getAllLearningTracks = async (params: any, options: IOptions) => {
         }
     }
 
+    // Exclude deleted tracks
+    andConditions.push({
+        isDeleted: false,
+    });
+
     const whereConditions: Prisma.LearningTrackWhereInput =
         andConditions.length > 0 ? { AND: andConditions } : {};
 
-    // Fetch all learning tracks - MemberApplication model এর actual fields
+    // Fetch all learning tracks
     const tracks = await prisma.learningTrack.findMany({
         where: whereConditions,
         skip,
@@ -133,37 +139,62 @@ export const getAllLearningTracks = async (params: any, options: IOptions) => {
                 orderBy: {
                     order: 'asc',
                 },
+                select: {
+                    id: true,
+                    title: true,
+                    order: true,
+                },
             },
-
             // Include roadmaps
             roadmaps: {
                 orderBy: {
                     order: 'asc',
                 },
+                select: {
+                    id: true,
+                    phase: true,
+                    description: true,
+                    order: true,
+                },
             },
-
             // Include careers
-            careers: true,
-
+            careers: {
+                select: {
+                    id: true,
+                    role: true,
+                    details: true,
+                },
+            },
             // Include tools
-            tools: true,
-
-            // Include members
+            tools: {
+                select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                },
+            },
+            // Include members - FIXED: Remove profileImage from Member select
             members: {
                 select: {
                     id: true,
                     userId: true,
                     studentId: true,
-                    profileImage: true,
+                    // REMOVE: profileImage: true, // This doesn't exist in Member model
                     departmentId: true,
                     sessionId: true,
-                    learningTrackId: true,
+                    batch: true,
+                    skills: true,
+                    github: true,
+                    linkedin: true,
                     user: {
                         select: {
                             id: true,
                             firstName: true,
                             lastName: true,
                             email: true,
+                            profileImage: true, // profileImage is in User model
+                            phone: true,
+                            bio: true,
                         },
                     },
                     department: {
@@ -178,62 +209,31 @@ export const getAllLearningTracks = async (params: any, options: IOptions) => {
                             name: true,
                         },
                     },
-                    learningTrack: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
                 },
             },
-
-            // Include applications - MemberApplication model এর actual fields
+            // Include applications - FIXED: Update based on your actual MemberApplication model
             applications: {
                 select: {
                     id: true,
                     status: true,
-                    // আপনার MemberApplication model এর actual fields:
-                    // appliedAt: true, // যদি থাকে
-                    // createdAt: true, // সাধারণত এটা থাকে
-                    // updatedAt: true,
-                    userId: true,
                     studentId: true,
                     departmentId: true,
                     sessionId: true,
-                    profileImage: true,
                     interestedAreas: true,
-                    learningTrackId: true,
+                    createdAt: true,
                     user: {
                         select: {
                             id: true,
                             firstName: true,
                             lastName: true,
                             email: true,
-                            admin: {
-                                select: {
-                                    profileImage: true,
-                                },
-                            },
-                            member: {
-                                select: {
-                                    profileImage: true,
-                                },
-                            },
-                            mentor: {
-                                select: {
-                                    profileImage: true,
-                                },
-                            },
-                            moderator: {
-                                select: {
-                                    id: true,
-                                },
-                            },
+                            profileImage: true, // From User model
+                            phone: true,
+                            bio: true,
                         },
                     },
                 },
             },
-
             // Count aggregations
             _count: {
                 select: {
@@ -252,62 +252,82 @@ export const getAllLearningTracks = async (params: any, options: IOptions) => {
     const transformedTracks = tracks.map((track) => {
         // Transform members
         const transformedMembers = track.members.map((member) => ({
-            ...member,
+            id: member.id,
+            userId: member.userId,
+            studentId: member.studentId,
+            // Remove profileImage from here
+            departmentId: member.departmentId,
+            sessionId: member.sessionId,
+            batch: member.batch,
+            skills: member.skills,
+            github: member.github,
+            linkedin: member.linkedin,
             user: {
-                ...member.user,
+                id: member.user.id,
+                firstName: member.user.firstName,
+                lastName: member.user.lastName,
+                email: member.user.email,
+                profileImage: member.user.profileImage, // From User model
+                phone: member.user.phone,
+                bio: member.user.bio,
                 fullName: `${member.user.firstName} ${member.user.lastName}`,
-                profileImage: member.profileImage,
             },
+            department: member.department,
+            session: member.session,
         }));
 
         // Transform applications
-        const transformedApplications = track.applications.map((app) => {
-            // Determine profile image from related models
-            let profileImage = app.profileImage || null; // প্রথমে application-এর profileImage check করুন
-
-            if (!profileImage) {
-                if (app.user.admin?.profileImage) {
-                    profileImage = app.user.admin.profileImage;
-                } else if (app.user.member?.profileImage) {
-                    profileImage = app.user.member.profileImage;
-                } else if (app.user.mentor?.profileImage) {
-                    profileImage = app.user.mentor.profileImage;
-                }
-            }
-
-            return {
-                id: app.id,
-                status: app.status,
-                // যদি createdAt থাকে তাহলে appliedAt হিসেবে ব্যবহার করুন
-                appliedAt: (app as any).createdAt || (app as any).appliedAt || null,
-                userId: app.userId,
-                studentId: app.studentId,
-                departmentId: app.departmentId,
-                sessionId: app.sessionId,
-                profileImage: app.profileImage,
-                interestedAreas: app.interestedAreas,
-                learningTrackId: app.learningTrackId,
-                user: {
-                    id: app.user.id,
-                    firstName: app.user.firstName,
-                    lastName: app.user.lastName,
-                    email: app.user.email,
-                    profileImage,
-                    fullName: `${app.user.firstName} ${app.user.lastName}`,
-                },
-            };
-        });
+        const transformedApplications = track.applications.map((app) => ({
+            id: app.id,
+            status: app.status,
+            appliedAt: app.createdAt, // Use createdAt as appliedAt
+            studentId: app.studentId,
+            departmentId: app.departmentId,
+            sessionId: app.sessionId,
+            interestedAreas: app.interestedAreas,
+            learningTrackId: track.id,
+            user: {
+                id: app.user.id,
+                firstName: app.user.firstName,
+                lastName: app.user.lastName,
+                email: app.user.email,
+                profileImage: app.user.profileImage, // From User model
+                phone: app.user.phone,
+                bio: app.user.bio,
+                fullName: `${app.user.firstName} ${app.user.lastName}`,
+            },
+        }));
 
         return {
-            ...track,
+            id: track.id,
+            name: track.name,
+            slug: track.slug,
+            shortDesc: track.shortDesc,
+            longDesc: track.longDesc,
+            icon: track.icon,
+            difficulty: track.difficulty,
+            duration: track.duration,
+            isActive: track.isActive,
+            isDeleted: track.isDeleted,
+            createdAt: track.createdAt,
+            updatedAt: track.updatedAt,
+
+            // Related data
+            topics: track.topics,
+            roadmaps: track.roadmaps,
+            careers: track.careers,
+            tools: track.tools,
             members: transformedMembers,
             applications: transformedApplications,
+
+            // Counts
             memberCount: track._count.members,
             applicationCount: track._count.applications,
             topicCount: track._count.topics,
             roadmapCount: track._count.roadmaps,
             careerCount: track._count.careers,
             toolCount: track._count.tools,
+
             // Remove the _count object
             _count: undefined,
         };
