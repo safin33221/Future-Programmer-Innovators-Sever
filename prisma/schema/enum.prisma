@@ -4,6 +4,7 @@ enum UserRole {
     MODERATOR
     MEMBER
     MENTOR
+    SUPER_ADMIN
 }
 
 enum EventStatus {

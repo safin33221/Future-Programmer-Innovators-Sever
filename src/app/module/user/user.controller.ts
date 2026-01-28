@@ -8,6 +8,19 @@ import { userFilterableFields } from "./user.constant.js";
 import { AuthRequest } from "../../middleware/auth.js";
 
 
+const createRoleBaseUser = catchAsync(
+    async (req: Request, res: Response) => {
+        console.log("console on contoller", req.body);
+        const result = await UserService.createRoleBaseUser(req.body);
+
+        sendResponse(res, {
+            status: statusCode.CREATED,
+            success: true,
+            message: "Role created successfully",
+            data: result,
+        });
+    }
+);
 
 
 
@@ -21,6 +34,7 @@ const getAllUsers = catchAsync(
         const filters = pick(req.query, userFilterableFields) // searching , filtering
         const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
         const result = await UserService.getAllUsers(filters, options);
+        console.log("req query", req.query);
 
         sendResponse(res, {
             status: statusCode.OK,
@@ -58,7 +72,7 @@ const SoftDelete = catchAsync(async (req: Request, res: Response) => {
 
 
 export const userController = {
-
+    createRoleBaseUser,
     getAllUsers,
     getMe,
     SoftDelete
