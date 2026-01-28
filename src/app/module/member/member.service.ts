@@ -10,12 +10,12 @@ import { statusCode } from "../../shared/statusCode.js";
  * MEMBER → Apply for membership
  */
 const createMemberApplication = async (userId: string, payload: any) => {
-    console.log({ userId });
+
     const exists = await prisma.memberApplication.findUnique({
         where: { userId },
     });
 
-    console.log({ exists });
+
     if (exists) {
         throw new ApiError(statusCode.NOT_ACCEPTABLE, "You have already applied for membership");
     }

@@ -10,7 +10,7 @@ import { AuthRequest } from "../../middleware/auth.js";
 
 const createRoleBaseUser = catchAsync(
     async (req: Request, res: Response) => {
-        console.log("console on contoller", req.body);
+
         const result = await UserService.createRoleBaseUser(req.body);
 
         sendResponse(res, {
@@ -34,7 +34,7 @@ const getAllUsers = catchAsync(
         const filters = pick(req.query, userFilterableFields) // searching , filtering
         const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
         const result = await UserService.getAllUsers(filters, options);
-        console.log("req query", req.query);
+
 
         sendResponse(res, {
             status: statusCode.OK,
@@ -46,7 +46,7 @@ const getAllUsers = catchAsync(
 );
 
 const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
-    console.log(req.user);
+
     const email = req.user!.email
     const result = await UserService.getMe(email as string);
 

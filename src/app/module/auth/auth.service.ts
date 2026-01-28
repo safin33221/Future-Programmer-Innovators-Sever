@@ -25,14 +25,7 @@ const registerAsGuest = async (payload: {
     // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(payload.password, Number(envConfig.Salt_rounds));
 
-    console.log({
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        email: payload.email,
-        password: hashedPassword,
-        role: "GUEST",
-        isVerified: true
-    });
+
     // ✅ Create user securely
     const result = await prisma.user.create({
         data: {

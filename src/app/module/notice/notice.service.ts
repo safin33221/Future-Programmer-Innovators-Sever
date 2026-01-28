@@ -10,7 +10,7 @@ const createNotice = async (
         content?: string;
     }
 ) => {
-    console.log({ payload });
+
     const result = await prisma.notice.create({
         data: {
             title: payload.title,

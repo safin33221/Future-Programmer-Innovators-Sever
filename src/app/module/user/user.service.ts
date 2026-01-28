@@ -10,7 +10,7 @@ const getAllUsers = async (params: any, options: IOptions) => {
 
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
-    console.log(searchTerm);
+
 
     const andConditions: Prisma.UserWhereInput[] = [];
     if (searchTerm) {
@@ -221,7 +221,7 @@ const SoftDelete = async (id: string) => {
 export const createRoleBaseUser = async (
     data: any
 ) => {
-    console.log("consol on service", data);
+
     const { email, role } = data;
 
     // 1️⃣ Check user exists
