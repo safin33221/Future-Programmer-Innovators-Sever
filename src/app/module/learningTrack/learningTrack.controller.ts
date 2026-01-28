@@ -96,7 +96,7 @@ const updateLearningTrack = catchAsync(
 const softDeleteLearningTrack = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
-        console.log(id);
+
         const result = await LearningTrackService.softDeleteLearningTrack(id as string);
 
         sendResponse(res, {

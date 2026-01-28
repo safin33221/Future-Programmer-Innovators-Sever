@@ -7,7 +7,10 @@ import { auth } from '../../middleware/auth.js';
 
 const router = express.Router()
 
-
+router.post("/create-role-base-user",
+    auth(UserRole.ADMIN),
+    userController.createRoleBaseUser
+)
 router.get('/',
     auth(UserRole.ADMIN),
     userController.getAllUsers)

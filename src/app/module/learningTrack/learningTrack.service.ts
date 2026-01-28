@@ -368,7 +368,7 @@ const updateLearningTrack = async (id: string, payload: any) => {
 };
 
 const softDeleteLearningTrack = async (id: string) => {
-    console.log({ id });
+
     return prisma.learningTrack.update({
         where: { id },
         data: {

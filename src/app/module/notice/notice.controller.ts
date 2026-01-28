@@ -14,7 +14,7 @@ import ApiError from "../../errors/ApiError.js";
 ========================= */
 const createNotice = catchAsync(
     async (req: AuthRequest, res: Response) => {
-        console.log(req.body);
+
 
         if (!req.user?.id) {
             throw new ApiError(401, "User not authenticated");
