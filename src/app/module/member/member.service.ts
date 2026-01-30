@@ -13,6 +13,7 @@ const createMemberApplication = async (
     userId: string,
     payload: any
 ) => {
+
     const existing = await prisma.memberApplication.findUnique({
         where: { userId },
     });
@@ -50,8 +51,10 @@ const createMemberApplication = async (
                         connect: { id: payload.sessionId },
                     },
 
-                    learningTrackId: payload.interests,
-
+                    learningTrack: payload.interests
+                        ? { connect: { id: payload.interests } }
+                        : { disconnect: true },
+                    phoneNumber: payload.phoneNumber,
                     profileImage: payload.profileImage ?? null,
                     joinMotivation: payload.motivation,
 
@@ -75,7 +78,7 @@ const createMemberApplication = async (
             departmentId: payload.departmentId,
             sessionId: payload.sessionId,
             learningTrackId: payload.interests ?? null,
-
+            phoneNumber: payload.phoneNumber,
             interestedAreas: payload.interestedAreas ?? [],
             profileImage: payload.profileImage ?? null,
             joinMotivation: payload.motivation ?? null,
@@ -231,6 +234,8 @@ export const approveApplication = async (applicationId: string) => {
                 studentId: true,
                 departmentId: true,
                 sessionId: true,
+                phoneNumber: true,
+
             },
         });
 
@@ -264,7 +269,11 @@ export const approveApplication = async (applicationId: string) => {
         =============================== */
         await tx.user.update({
             where: { id: application.userId },
-            data: { role: "MEMBER" },
+            data: {
+                role: "MEMBER",
+                phone: application.phoneNumber
+            },
+
         });
 
         await tx.member.create({
