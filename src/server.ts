@@ -5,14 +5,14 @@ import app from './app.js';
 import { connectRedis, redisClient } from "./app/config/redis.config.js";
 import seedSuperAdmin from "./app/helper/seed.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 async function bootstrap() {
     try {
         await prisma.$connect();
         console.log('🟢 Database connected');
 
-        app.listen(PORT, () => {
+        app.listen(PORT, "0.0.0.0", () => {
             console.log(`🚀 Server running on port ${PORT}`);
         });
     } catch (error) {
