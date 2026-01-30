@@ -69,7 +69,7 @@ const approveApplication = catchAsync(
 const rejectApplication = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
-        const result = await MemberService.rejectApplication(id as string);
+        const result = await MemberService.rejectApplication(id as string, req.body.reviewComment);
 
         sendResponse(res, {
             status: statusCode.OK,
