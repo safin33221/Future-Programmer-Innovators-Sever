@@ -83,6 +83,7 @@ const getAllUsers = async (params: any, options: IOptions) => {
                     batch: true,
                     departmentId: true,
                     sessionId: true,
+                    learningTrack: true
                 },
             },
 
@@ -128,6 +129,7 @@ const getMe = async (email: string) => {
             admin: true,
             mentor: true,
             moderator: true,
+            memberApplication: true,
             member: {
                 include: {
                     department: true,
@@ -202,7 +204,8 @@ const getMe = async (email: string) => {
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-        profile: roleSpecificData
+        profile: roleSpecificData,
+        memberShipApplication: user.memberApplication || null
     };
 };
 
