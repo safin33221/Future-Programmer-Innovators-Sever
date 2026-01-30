@@ -5,7 +5,7 @@ import app from './app.js';
 import { connectRedis, redisClient } from "./app/config/redis.config.js";
 import seedSuperAdmin from "./app/helper/seed.js";
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 8080;
 
 async function bootstrap() {
     try {
@@ -21,10 +21,11 @@ async function bootstrap() {
     }
 }
 (async () => {
-    connectRedis()
-    bootstrap();
-    seedSuperAdmin()
-})()
+    await connectRedis();   // ensure connected
+    await bootstrap();      // start server
+    await seedSuperAdmin(); // AFTER server start
+})();
+
 
 process.on('SIGINT', async () => {
     await prisma.$disconnect();

@@ -7,14 +7,19 @@ import globalErrorHandler from './app/middleware/globalErrorHandler.js';
 const app: Application = express();
 
 /* -------------------- MIDDLEWARE -------------------- */
-app.use(cors());
+app.use(
+    cors({
+        origin: "*",
+        credentials: true,
+    })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-
-
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }))
+
+
+
 
 app.use('/api/v1', router)
 
