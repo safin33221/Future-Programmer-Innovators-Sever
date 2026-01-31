@@ -305,6 +305,72 @@ export const createRoleBaseUser = async (
     };
 };
 
+export const updateUser = async (data: any) => {
+
+    const { id, role, roleData, ...userData } = data;
+
+    return await prisma.$transaction(async (tx) => {
+        // 1️⃣ Find user
+        const user = await tx.user.findUnique({
+            where: { id }
+        });
+
+        if (!user) {
+            throw new ApiError(statusCode.NOT_FOUND, "User not found");
+        }
+
+        // 2️⃣ Update basic user table (if data exists)
+        let updatedUser = user;
+        if (Object.keys(userData).length > 0) {
+            updatedUser = await tx.user.update({
+                where: { id },
+                data: userData
+            });
+        }
+
+        // 3️⃣ Update role-based table (if data exists)
+        let updatedRoleData = null;
+
+        if (roleData) {
+            switch (user.role) {
+                case "ADMIN":
+                    updatedRoleData = await tx.admin.update({
+                        where: { userId: id },
+                        data: roleData
+                    });
+                    break;
+
+                case "MEMBER":
+                    updatedRoleData = await tx.member.update({
+                        where: { userId: id },
+                        data: roleData
+                    });
+                    break;
+
+                case "MENTOR":
+                    updatedRoleData = await tx.mentor.update({
+                        where: { userId: id },
+                        data: roleData
+                    });
+                    break;
+                case "MODERATOR":
+                    updatedRoleData = await tx.moderator.update({
+                        where: { userId: id },
+                        data: roleData
+                    });
+                    break;
+
+                default:
+                    throw new ApiError(statusCode.BAD_REQUEST, "Invalid role");
+            }
+        }
+
+        // 4️⃣ Final response
+        return updatedRoleData;
+    });
+};
+
+
 
 
 
@@ -313,5 +379,6 @@ export const UserService = {
     createRoleBaseUser,
     getAllUsers,
     getMe,
-    SoftDelete
+    SoftDelete,
+    updateUser
 };

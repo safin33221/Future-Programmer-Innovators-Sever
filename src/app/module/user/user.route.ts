@@ -22,6 +22,9 @@ router.get("/me",
 
 
 
+router.patch('/update',
+    userController.updateUser)
+
 router.patch('/soft-delete/:id',
     auth(UserRole.ADMIN),
     userController.SoftDelete)
