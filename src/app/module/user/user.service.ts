@@ -6,54 +6,56 @@ import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
 
 
-const getAllUsers = async (params: any, options: IOptions) => {
 
-    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+
+
+
+export const getAllUsers = async (params: any, options: IOptions) => {
+    /* ---------------- PAGINATION ---------------- */
+    const { page, limit, skip, sortBy, sortOrder } =
+        paginationHelper.calculatePagination(options);
+
     const { searchTerm, ...filterData } = params;
 
-
+    /* ---------------- WHERE CONDITIONS ---------------- */
     const andConditions: Prisma.UserWhereInput[] = [];
+
     if (searchTerm) {
         andConditions.push({
-            OR: userSearchableFields.map(field => ({
+            OR: userSearchableFields.map((field) => ({
                 [field]: {
                     contains: searchTerm,
-                    mode: "insensitive"
-                }
-            }))
+                    mode: "insensitive",
+                },
+            })),
         });
     }
 
-
     if (Object.keys(filterData).length > 0) {
         andConditions.push({
-            AND: Object.keys(filterData).map(key => ({
+            AND: Object.keys(filterData).map((key) => ({
                 [key]: {
-                    equals: (filterData as any)[key]
-                }
-            }))
-        })
+                    equals: (filterData as any)[key],
+                },
+            })),
+        });
     }
 
-    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-        AND: andConditions
-    } : {}
+    const whereConditions: Prisma.UserWhereInput =
+        andConditions.length > 0 ? { AND: andConditions } : {};
 
-
-
-
+    /* ---------------- DB QUERY ---------------- */
     const users = await prisma.user.findMany({
         where: whereConditions,
         skip,
         take: limit,
-
         orderBy:
             sortBy && sortOrder
                 ? { [sortBy]: sortOrder }
                 : { createdAt: "desc" },
 
         select: {
-            // 🔹 Core user fields
+            // core user fields
             id: true,
             firstName: true,
             lastName: true,
@@ -62,31 +64,32 @@ const getAllUsers = async (params: any, options: IOptions) => {
             profileImage: true,
             phone: true,
             bio: true,
-
             isActive: true,
             isVerified: true,
-
             createdAt: true,
             updatedAt: true,
+            lastLoginAt: true,
 
-            // 🔹 Role-specific (ONE will exist)
+            // role relations
             admin: {
                 select: {
                     adminLevel: true,
-                    department: true,
+                    permissions: true,
                 },
             },
-
             member: {
                 select: {
                     studentId: true,
-                    batch: true,
-                    departmentId: true,
-                    sessionId: true,
-                    learningTrack: true
+                    department: true,
+                    session: true,
+                    learningTrack: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
                 },
             },
-
             mentor: {
                 select: {
                     designation: true,
@@ -94,7 +97,6 @@ const getAllUsers = async (params: any, options: IOptions) => {
                     experience: true,
                 },
             },
-
             moderator: {
                 select: {
                     moderationLevel: true,
@@ -103,21 +105,68 @@ const getAllUsers = async (params: any, options: IOptions) => {
         },
     });
 
+    /* ---------------- ROLE → PROFILE MAPPER ---------------- */
+    const mappedUsers = users.map((user) => {
+        let profile: any = null;
 
+        switch (user.role) {
+            case UserRole.ADMIN:
+                profile = user.admin;
+                break;
 
+            case UserRole.MEMBER:
+                profile = user.member;
+                break;
+
+            case UserRole.MENTOR:
+                profile = user.mentor;
+                break;
+
+            case UserRole.MODERATOR:
+                profile = user.moderator;
+                break;
+
+            default:
+                profile = null; // BASIC USER
+        }
+
+        return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            profileImage: user.profileImage,
+            phone: user.phone,
+            bio: user.bio,
+            isActive: user.isActive,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
+            updatedAt: user.updatedAt,
+            profile, // ✅ role-based unified profile
+        };
+    });
+
+    /* ---------------- TOTAL COUNT ---------------- */
     const total = await prisma.user.count({
         where: whereConditions,
     });
 
+    /* ---------------- FINAL RESPONSE ---------------- */
     return {
         meta: {
             page,
             limit,
             total,
         },
-        data: users,
+        data: mappedUsers,
     };
 };
+
+
+
+
 
 const getMe = async (email: string) => {
     const user = await prisma.user.findUnique({
