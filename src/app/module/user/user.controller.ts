@@ -59,7 +59,7 @@ const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
 });
 const updateUser = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await UserService.updateUser(req.body);
+    const result = await UserService.updateUser(req);
 
     sendResponse(res, {
         status: statusCode.OK,
@@ -68,6 +68,9 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+
+
+
 const SoftDelete = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
     const result = await UserService.SoftDelete(id as string);

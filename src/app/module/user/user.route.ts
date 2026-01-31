@@ -3,6 +3,7 @@ import { userController } from './user.controller.js';
 
 import { UserRole } from '@prisma/client';
 import { auth } from '../../middleware/auth.js';
+import { fileUploader } from '../../helper/fileUploader.js';
 
 
 const router = express.Router()
@@ -23,6 +24,7 @@ router.get("/me",
 
 
 router.patch('/update',
+    fileUploader.upload.single('file'),
     userController.updateUser)
 
 

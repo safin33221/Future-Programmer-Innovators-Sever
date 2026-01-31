@@ -1,9 +1,11 @@
 import { userSearchableFields } from "./user.constant.js";
 import prisma from "../../../lib/prisma.js";
-import { Prisma, UserRole } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
+import { Request } from "express";
+import { fileUploader } from "../../helper/fileUploader.js";
 
 
 
@@ -205,7 +207,12 @@ const getMe = async (email: string) => {
         case "ADMIN":
             roleSpecificData = {
                 adminLevel: user.admin?.adminLevel,
-                permissions: user.admin?.permissions || []
+                permissions: user.admin?.permissions || [],
+
+                github: user.admin?.github,
+                linkedin: user.admin?.linkedin,
+                portfolio: user.admin?.portfolio,
+                skills: user.admin?.skills,
             };
             break;
         case "MEMBER":
@@ -354,75 +361,138 @@ export const createRoleBaseUser = async (
     };
 };
 
-export const updateUser = async (data: any) => {
+export const updateUser = async (req: Request) => {
+    const file = req.file;
 
-    const { id, role, roleData, ...userData } = data;
+    /* ---------- image upload ---------- */
+    if (file) {
+        const uploaded = await fileUploader.uploadToCloudinary(file);
+        req.body.profileImage = uploaded.secure_url;
+    }
 
-    return await prisma.$transaction(async (tx) => {
-        // 1️⃣ Find user
-        const user = await tx.user.findUnique({
-            where: { id }
-        });
+    const { id, roleData, ...userData } = req.body;
 
+    /* ---------- parse roleData ---------- */
+    let parsedRoleData: any = null;
+    if (roleData && typeof roleData === "string") {
+        parsedRoleData = JSON.parse(roleData);
+    }
+
+    return prisma.$transaction(async (tx) => {
+        /* 1️⃣ find user */
+        const user = await tx.user.findUnique({ where: { id } });
         if (!user) {
-            throw new ApiError(statusCode.NOT_FOUND, "User not found");
+            throw new ApiError(404, "User not found");
         }
 
-        // 2️⃣ Update basic user table (if data exists)
-        let updatedUser = user;
+        /* 2️⃣ update base user */
         if (Object.keys(userData).length > 0) {
-            updatedUser = await tx.user.update({
+            await tx.user.update({
                 where: { id },
-                data: userData
+                data: userData,
             });
         }
 
-        // 3️⃣ Update role-based table (if data exists)
-        let updatedRoleData = null;
-
-        if (roleData) {
+        /* 3️⃣ role-specific update (NO blind upsert) */
+        if (parsedRoleData && Object.keys(parsedRoleData).length > 0) {
             switch (user.role) {
-                case "ADMIN":
-                    updatedRoleData = await tx.admin.update({
-                        where: { userId: id },
-                        data: roleData
-                    });
-                    break;
 
-                case "MEMBER":
-                    updatedRoleData = await tx.member.update({
+                /* ================= ADMIN ================= */
+                case "ADMIN": {
+                    const admin = await tx.admin.findUnique({
                         where: { userId: id },
-                        data: roleData
                     });
-                    break;
 
-                case "MENTOR":
-                    updatedRoleData = await tx.mentor.update({
+                    if (!admin) {
+                        throw new ApiError(404, "Admin not found");
+                    }
+
+                    await tx.admin.update({
                         where: { userId: id },
-                        data: roleData
+                        data: parsedRoleData,
                     });
                     break;
-                case "MODERATOR":
-                    updatedRoleData = await tx.moderator.update({
+                }
+
+                /* ================= MEMBER ================= */
+                case "MEMBER": {
+                    const member = await tx.member.findUnique({
                         where: { userId: id },
-                        data: roleData
+                    });
+
+                    if (!member) {
+                        throw new ApiError(404, "Member not found");
+                    }
+
+                    const {
+                        departmentId,
+                        sessionId,
+                        ...memberData
+                    } = parsedRoleData;
+
+                    await tx.member.update({
+                        where: { userId: id },
+                        data: {
+                            ...memberData,
+
+                            ...(departmentId && {
+                                department: {
+                                    connect: { id: departmentId },
+                                },
+                            }),
+
+                            ...(sessionId && {
+                                session: {
+                                    connect: { id: sessionId },
+                                },
+                            }),
+                        },
                     });
                     break;
+                }
+
+                /* ================= MENTOR ================= */
+                case "MENTOR": {
+                    const mentor = await tx.mentor.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!mentor) {
+                        throw new ApiError(404, "Mentor not found");
+                    }
+
+                    await tx.mentor.update({
+                        where: { userId: id },
+                        data: parsedRoleData,
+                    });
+                    break;
+                }
+
+                /* ================= MODERATOR ================= */
+                case "MODERATOR": {
+                    const moderator = await tx.moderator.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!moderator) {
+                        throw new ApiError(404, "Moderator not found");
+                    }
+
+                    await tx.moderator.update({
+                        where: { userId: id },
+                        data: parsedRoleData,
+                    });
+                    break;
+                }
 
                 default:
-                    throw new ApiError(statusCode.BAD_REQUEST, "Invalid role");
+                    throw new ApiError(400, "Invalid role");
             }
         }
 
-        // 4️⃣ Final response
-        return updatedRoleData;
+        return { success: true };
     });
 };
-
-
-
-
-
 
 export const UserService = {
     createRoleBaseUser,
