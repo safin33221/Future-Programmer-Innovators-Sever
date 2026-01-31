@@ -12,7 +12,7 @@ async function bootstrap() {
         await prisma.$connect();
         console.log('🟢 Database connected');
 
-        app.listen(PORT, "0.0.0.0", () => {
+        app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
         });
     } catch (error) {
