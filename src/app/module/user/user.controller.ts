@@ -57,6 +57,20 @@ const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
         data: result,
     });
 });
+const updateUser = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await UserService.updateUser(req);
+
+    sendResponse(res, {
+        status: statusCode.OK,
+        success: true,
+        message: "User Updated Successful",
+        data: result,
+    });
+});
+
+
+
 const SoftDelete = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
     const result = await UserService.SoftDelete(id as string);
@@ -75,5 +89,6 @@ export const userController = {
     createRoleBaseUser,
     getAllUsers,
     getMe,
-    SoftDelete
+    SoftDelete,
+    updateUser
 };

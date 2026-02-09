@@ -1,59 +1,63 @@
 import { userSearchableFields } from "./user.constant.js";
 import prisma from "../../../lib/prisma.js";
-import { Prisma, UserRole } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
+import { Request } from "express";
+import { fileUploader } from "../../helper/fileUploader.js";
 
 
-const getAllUsers = async (params: any, options: IOptions) => {
 
-    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+
+
+
+export const getAllUsers = async (params: any, options: IOptions) => {
+    /* ---------------- PAGINATION ---------------- */
+    const { page, limit, skip, sortBy, sortOrder } =
+        paginationHelper.calculatePagination(options);
+
     const { searchTerm, ...filterData } = params;
 
-
+    /* ---------------- WHERE CONDITIONS ---------------- */
     const andConditions: Prisma.UserWhereInput[] = [];
+
     if (searchTerm) {
         andConditions.push({
-            OR: userSearchableFields.map(field => ({
+            OR: userSearchableFields.map((field) => ({
                 [field]: {
                     contains: searchTerm,
-                    mode: "insensitive"
-                }
-            }))
+                    mode: "insensitive",
+                },
+            })),
         });
     }
 
-
     if (Object.keys(filterData).length > 0) {
         andConditions.push({
-            AND: Object.keys(filterData).map(key => ({
+            AND: Object.keys(filterData).map((key) => ({
                 [key]: {
-                    equals: (filterData as any)[key]
-                }
-            }))
-        })
+                    equals: (filterData as any)[key],
+                },
+            })),
+        });
     }
 
-    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-        AND: andConditions
-    } : {}
+    const whereConditions: Prisma.UserWhereInput =
+        andConditions.length > 0 ? { AND: andConditions } : {};
 
-
-
-
+    /* ---------------- DB QUERY ---------------- */
     const users = await prisma.user.findMany({
         where: whereConditions,
         skip,
         take: limit,
-
         orderBy:
             sortBy && sortOrder
                 ? { [sortBy]: sortOrder }
                 : { createdAt: "desc" },
 
         select: {
-            // 🔹 Core user fields
+            // core user fields
             id: true,
             firstName: true,
             lastName: true,
@@ -62,31 +66,32 @@ const getAllUsers = async (params: any, options: IOptions) => {
             profileImage: true,
             phone: true,
             bio: true,
-
             isActive: true,
             isVerified: true,
-
             createdAt: true,
             updatedAt: true,
+            lastLoginAt: true,
 
-            // 🔹 Role-specific (ONE will exist)
+            // role relations
             admin: {
                 select: {
                     adminLevel: true,
-                    department: true,
+                    permissions: true,
                 },
             },
-
             member: {
                 select: {
                     studentId: true,
-                    batch: true,
-                    departmentId: true,
-                    sessionId: true,
-                    learningTrack: true
+                    department: true,
+                    session: true,
+                    learningTrack: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
                 },
             },
-
             mentor: {
                 select: {
                     designation: true,
@@ -94,7 +99,6 @@ const getAllUsers = async (params: any, options: IOptions) => {
                     experience: true,
                 },
             },
-
             moderator: {
                 select: {
                     moderationLevel: true,
@@ -103,21 +107,68 @@ const getAllUsers = async (params: any, options: IOptions) => {
         },
     });
 
+    /* ---------------- ROLE → PROFILE MAPPER ---------------- */
+    const mappedUsers = users.map((user) => {
+        let profile: any = null;
 
+        switch (user.role) {
+            case UserRole.ADMIN:
+                profile = user.admin;
+                break;
 
+            case UserRole.MEMBER:
+                profile = user.member;
+                break;
+
+            case UserRole.MENTOR:
+                profile = user.mentor;
+                break;
+
+            case UserRole.MODERATOR:
+                profile = user.moderator;
+                break;
+
+            default:
+                profile = null; // BASIC USER
+        }
+
+        return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            profileImage: user.profileImage,
+            phone: user.phone,
+            bio: user.bio,
+            isActive: user.isActive,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
+            updatedAt: user.updatedAt,
+            profile, // ✅ role-based unified profile
+        };
+    });
+
+    /* ---------------- TOTAL COUNT ---------------- */
     const total = await prisma.user.count({
         where: whereConditions,
     });
 
+    /* ---------------- FINAL RESPONSE ---------------- */
     return {
         meta: {
             page,
             limit,
             total,
         },
-        data: users,
+        data: mappedUsers,
     };
 };
+
+
+
+
 
 const getMe = async (email: string) => {
     const user = await prisma.user.findUnique({
@@ -156,7 +207,12 @@ const getMe = async (email: string) => {
         case "ADMIN":
             roleSpecificData = {
                 adminLevel: user.admin?.adminLevel,
-                permissions: user.admin?.permissions || []
+                permissions: user.admin?.permissions || [],
+
+                github: user.admin?.github,
+                linkedin: user.admin?.linkedin,
+                portfolio: user.admin?.portfolio,
+                skills: user.admin?.skills,
             };
             break;
         case "MEMBER":
@@ -305,13 +361,143 @@ export const createRoleBaseUser = async (
     };
 };
 
+export const updateUser = async (req: Request) => {
+    const file = req.file;
 
+    /* ---------- image upload ---------- */
+    if (file) {
+        const uploaded = await fileUploader.uploadToCloudinary(file);
+        req.body.profileImage = uploaded.secure_url;
+    }
 
+    const { id, roleData, ...userData } = req.body;
 
+    /* ---------- parse roleData ---------- */
+    let parsedRoleData: any = null;
+    if (roleData && typeof roleData === "string") {
+        parsedRoleData = JSON.parse(roleData);
+    }
+
+    return prisma.$transaction(async (tx) => {
+        /* 1️⃣ find user */
+        const user = await tx.user.findUnique({ where: { id } });
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        /* 2️⃣ update base user */
+        if (Object.keys(userData).length > 0) {
+            await tx.user.update({
+                where: { id },
+                data: userData,
+            });
+        }
+
+        /* 3️⃣ role-specific update (NO blind upsert) */
+        if (parsedRoleData && Object.keys(parsedRoleData).length > 0) {
+            switch (user.role) {
+
+                /* ================= ADMIN ================= */
+                case "ADMIN": {
+                    const admin = await tx.admin.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!admin) {
+                        throw new ApiError(404, "Admin not found");
+                    }
+
+                    await tx.admin.update({
+                        where: { userId: id },
+                        data: parsedRoleData,
+                    });
+                    break;
+                }
+
+                /* ================= MEMBER ================= */
+                case "MEMBER": {
+                    const member = await tx.member.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!member) {
+                        throw new ApiError(404, "Member not found");
+                    }
+
+                    const {
+                        departmentId,
+                        sessionId,
+                        ...memberData
+                    } = parsedRoleData;
+
+                    await tx.member.update({
+                        where: { userId: id },
+                        data: {
+                            ...memberData,
+
+                            ...(departmentId && {
+                                department: {
+                                    connect: { id: departmentId },
+                                },
+                            }),
+
+                            ...(sessionId && {
+                                session: {
+                                    connect: { id: sessionId },
+                                },
+                            }),
+                        },
+                    });
+                    break;
+                }
+
+                /* ================= MENTOR ================= */
+                case "MENTOR": {
+                    const mentor = await tx.mentor.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!mentor) {
+                        throw new ApiError(404, "Mentor not found");
+                    }
+
+                    await tx.mentor.update({
+                        where: { userId: id },
+                        data: parsedRoleData,
+                    });
+                    break;
+                }
+
+                /* ================= MODERATOR ================= */
+                case "MODERATOR": {
+                    const moderator = await tx.moderator.findUnique({
+                        where: { userId: id },
+                    });
+
+                    if (!moderator) {
+                        throw new ApiError(404, "Moderator not found");
+                    }
+
+                    await tx.moderator.update({
+                        where: { userId: id },
+                        data: parsedRoleData,
+                    });
+                    break;
+                }
+
+                default:
+                    throw new ApiError(400, "Invalid role");
+            }
+        }
+
+        return { success: true };
+    });
+};
 
 export const UserService = {
     createRoleBaseUser,
     getAllUsers,
     getMe,
-    SoftDelete
+    SoftDelete,
+    updateUser
 };

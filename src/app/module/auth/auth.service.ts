@@ -87,7 +87,14 @@ const login = async (payload: { email: string; password: string }) => {
         envConfig.JWT.JWT_REFRESH_SECRET,
         envConfig.JWT.JWT_REFRESH_EXPIRES_IN as string
     );
-
+    await prisma.user.update(
+        {
+            where: { id: user.id },
+            data: {
+                lastLoginAt: new Date()
+            }
+        }
+    )
     // 5️⃣ Remove sensitive fields
     const { password, ...safeUser } = user;
 
