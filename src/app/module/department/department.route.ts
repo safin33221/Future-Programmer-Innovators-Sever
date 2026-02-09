@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express from "express";
 import { DepartmentController } from "./department.controller.js";
 import { auth } from "../../middleware/auth.js";
 import { UserRole } from "@prisma/client";
@@ -16,4 +16,4 @@ router.patch("/:id",
     auth(UserRole.ADMIN),
     DepartmentController.softDeleteDepartment);
 
-export const DepartmentRoute: Router = router;
+export const DepartmentRoute: any = router;

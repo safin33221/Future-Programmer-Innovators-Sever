@@ -1,5 +1,5 @@
 // src/app/modules/session/session.route.ts
-import express, { Router } from "express";
+import express from "express";
 import { SessionController } from "./session.controller.js";
 import { auth } from "../../middleware/auth.js";
 import { UserRole } from "@prisma/client";
@@ -14,4 +14,4 @@ router.patch("/:id",
     auth(UserRole.ADMIN),
     SessionController.softDeleteSession);
 
-export const SessionRoute: Router = router;
+export const SessionRoute: any = router;

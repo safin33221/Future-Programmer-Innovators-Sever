@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express from "express";
 import { learningTrackController } from "./learningTrack.controller.js";
 import { auth } from "../../middleware/auth.js";
 import { UserRole } from "@prisma/client";
@@ -27,4 +27,4 @@ router.patch(
     learningTrackController.softDeleteLearningTrack
 );
 
-export const LearningTrackRoute: Router = router;
+export const LearningTrackRoute: any = router;

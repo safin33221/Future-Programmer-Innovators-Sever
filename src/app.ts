@@ -1,4 +1,4 @@
-import express, { type Application, type Request, type Response } from 'express';
+import express, { Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import router from './app/routes/index.js';

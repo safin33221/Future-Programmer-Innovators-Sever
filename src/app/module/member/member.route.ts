@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express from "express";
 import { MemberController } from "./member.controller.js";
 import { auth } from "../../middleware/auth.js";
 import { UserRole } from "@prisma/client";
@@ -41,4 +41,4 @@ router.patch(
     MemberController.rejectApplication
 );
 
-export const MemberRoute: Router = router;
+export const MemberRoute: any = router;

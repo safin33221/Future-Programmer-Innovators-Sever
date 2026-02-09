@@ -1,9 +1,7 @@
 import bcrypt from "bcrypt";
-import { type JwtPayload } from "jsonwebtoken";
 import prisma from "../../../lib/prisma.js";
 import { jwtHelper } from "../../helper/jwtHelper.js";
 import envConfig from "../../config/env.config.js";
-import { date } from "zod/mini";
 
 
 

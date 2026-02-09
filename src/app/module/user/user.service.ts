@@ -4,7 +4,7 @@ import { Prisma, User, UserRole } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
-import { Request } from "express";
+import type { Request } from "express";
 import { fileUploader } from "../../helper/fileUploader.js";
 
 

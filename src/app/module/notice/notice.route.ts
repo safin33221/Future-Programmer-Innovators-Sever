@@ -1,11 +1,11 @@
-import { Router } from "express";
+import express from "express";
 import { auth } from "../../middleware/auth.js";
 import { UserRole } from "@prisma/client";
 import { validateRequest } from "../../middleware/validateRequest.js";
 import { NoticeValidation } from "./notice.validation.js";
 import { NoticeController } from "./notice.controller.js";
 
-const router = Router();
+const router = express.Router();
 
 /* =========================
    Public Routes
@@ -63,4 +63,4 @@ router.patch(
     NoticeController.softDeleteNotice
 );
 
-export const NoticeRoute: Router = router;
+export const NoticeRoute: any = router;

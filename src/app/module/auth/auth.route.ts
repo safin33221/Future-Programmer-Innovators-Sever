@@ -1,7 +1,5 @@
-import express, { Router } from "express";
+import express from "express";
 import { authController } from "./auth.controller.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
-import { loginSchema } from "./auth.validation.js";
 
 
 const router = express.Router()
@@ -13,4 +11,4 @@ router.post('/login',
     // validateRequest(loginSchema),
     authController.login)
 
-export const AuthRoute: Router = router;
+export const AuthRoute: any = router;

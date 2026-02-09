@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import express from 'express';
 import { userController } from './user.controller.js';
 
 import { UserRole } from '@prisma/client';
@@ -33,4 +33,4 @@ router.patch('/soft-delete/:id',
     auth(UserRole.ADMIN),
     userController.SoftDelete)
 
-export const UserRoute: Router = router;
+export const UserRoute: any = router;
