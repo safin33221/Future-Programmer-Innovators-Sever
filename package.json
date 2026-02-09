@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && cp -r src/app/utils/templates dist/app/utils/templates/",
+    "build": "prisma generate && tsc && cp -r src/app/utils/templates dist/app/utils/templates/",
     "start": "node dist/server.js",
     "prisma:studio": "prisma studio",
     "lint": "echo \"Add ESLint later\"",

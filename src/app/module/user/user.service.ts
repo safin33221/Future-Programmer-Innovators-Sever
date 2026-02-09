@@ -1,27 +1,24 @@
 import { userSearchableFields } from "./user.constant.js";
 import prisma from "../../../lib/prisma.js";
-import { Prisma, User, UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper.js";
 import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
 import type { Request } from "express";
 import { fileUploader } from "../../helper/fileUploader.js";
 
-
-
-
-
-
+/* =====================================================
+   GET ALL USERS
+===================================================== */
 export const getAllUsers = async (params: any, options: IOptions) => {
-    /* ---------------- PAGINATION ---------------- */
     const { page, limit, skip, sortBy, sortOrder } =
         paginationHelper.calculatePagination(options);
 
     const { searchTerm, ...filterData } = params;
 
-    /* ---------------- WHERE CONDITIONS ---------------- */
     const andConditions: Prisma.UserWhereInput[] = [];
 
+    /* ---------- search ---------- */
     if (searchTerm) {
         andConditions.push({
             OR: userSearchableFields.map((field) => ({
@@ -33,20 +30,22 @@ export const getAllUsers = async (params: any, options: IOptions) => {
         });
     }
 
-    if (Object.keys(filterData).length > 0) {
-        andConditions.push({
-            AND: Object.keys(filterData).map((key) => ({
-                [key]: {
-                    equals: (filterData as any)[key],
-                },
-            })),
-        });
+    /* ---------- safe filters ---------- */
+    const allowedFilters = ["role", "isActive", "isVerified", "isDelete"];
+
+    const safeFilters = Object.keys(filterData)
+        .filter((key) => allowedFilters.includes(key))
+        .map((key) => ({
+            [key]: { equals: filterData[key] },
+        }));
+
+    if (safeFilters.length > 0) {
+        andConditions.push({ AND: safeFilters });
     }
 
     const whereConditions: Prisma.UserWhereInput =
         andConditions.length > 0 ? { AND: andConditions } : {};
 
-    /* ---------------- DB QUERY ---------------- */
     const users = await prisma.user.findMany({
         where: whereConditions,
         skip,
@@ -57,7 +56,6 @@ export const getAllUsers = async (params: any, options: IOptions) => {
                 : { createdAt: "desc" },
 
         select: {
-            // core user fields
             id: true,
             firstName: true,
             lastName: true,
@@ -72,7 +70,6 @@ export const getAllUsers = async (params: any, options: IOptions) => {
             updatedAt: true,
             lastLoginAt: true,
 
-            // role relations
             admin: {
                 select: {
                     adminLevel: true,
@@ -107,7 +104,6 @@ export const getAllUsers = async (params: any, options: IOptions) => {
         },
     });
 
-    /* ---------------- ROLE → PROFILE MAPPER ---------------- */
     const mappedUsers = users.map((user) => {
         let profile: any = null;
 
@@ -115,21 +111,17 @@ export const getAllUsers = async (params: any, options: IOptions) => {
             case UserRole.ADMIN:
                 profile = user.admin;
                 break;
-
             case UserRole.MEMBER:
                 profile = user.member;
                 break;
-
             case UserRole.MENTOR:
                 profile = user.mentor;
                 break;
-
             case UserRole.MODERATOR:
                 profile = user.moderator;
                 break;
-
             default:
-                profile = null; // BASIC USER
+                profile = null;
         }
 
         return {
@@ -144,37 +136,28 @@ export const getAllUsers = async (params: any, options: IOptions) => {
             isActive: user.isActive,
             isVerified: user.isVerified,
             createdAt: user.createdAt,
-            lastLoginAt: user.lastLoginAt,
             updatedAt: user.updatedAt,
-            profile, // ✅ role-based unified profile
+            lastLoginAt: user.lastLoginAt,
+            profile,
         };
     });
 
-    /* ---------------- TOTAL COUNT ---------------- */
-    const total = await prisma.user.count({
-        where: whereConditions,
-    });
+    const total = await prisma.user.count({ where: whereConditions });
 
-    /* ---------------- FINAL RESPONSE ---------------- */
     return {
-        meta: {
-            page,
-            limit,
-            total,
-        },
+        meta: { page, limit, total },
         data: mappedUsers,
     };
 };
 
-
-
-
-
+/* =====================================================
+   GET ME (FIXED: findFirst)
+===================================================== */
 const getMe = async (email: string) => {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
         where: {
             email,
-            isDelete: false
+            isDelete: false,
         },
         include: {
             admin: true,
@@ -189,58 +172,60 @@ const getMe = async (email: string) => {
                         select: {
                             id: true,
                             name: true,
-                            slug: true
-                        }
-                    }
-                }
-            }
+                            slug: true,
+                        },
+                    },
+                },
+            },
         },
     });
 
     if (!user) {
-        throw new Error("User not found");
+        throw new ApiError(statusCode.NOT_FOUND, "User not found");
     }
 
-    let roleSpecificData = null;
+    let roleSpecificData: any = null;
 
     switch (user.role) {
-        case "ADMIN":
+        case UserRole.ADMIN:
             roleSpecificData = {
                 adminLevel: user.admin?.adminLevel,
-                permissions: user.admin?.permissions || [],
-
+                permissions: user.admin?.permissions ?? [],
                 github: user.admin?.github,
                 linkedin: user.admin?.linkedin,
                 portfolio: user.admin?.portfolio,
                 skills: user.admin?.skills,
             };
             break;
-        case "MEMBER":
+
+        case UserRole.MEMBER:
             roleSpecificData = {
                 studentId: user.member?.studentId,
                 department: user.member?.department,
                 session: user.member?.session,
                 learningTrack: user.member?.learningTrack,
                 batch: user.member?.batch,
-                skills: user.member?.skills || [],
+                skills: user.member?.skills ?? [],
                 github: user.member?.github,
-                linkedin: user.member?.linkedin
+                linkedin: user.member?.linkedin,
             };
             break;
-        case "MENTOR":
+
+        case UserRole.MENTOR:
             roleSpecificData = {
                 expertise: user.mentor?.expertise,
                 designation: user.mentor?.designation,
                 company: user.mentor?.company,
                 experience: user.mentor?.experience,
                 github: user.mentor?.github,
-                linkedin: user.mentor?.linkedin
+                linkedin: user.mentor?.linkedin,
             };
             break;
-        case "MODERATOR":
+
+        case UserRole.MODERATOR:
             roleSpecificData = {
-                permissions: user.moderator?.permissions || [],
-                moderationLevel: user.moderator?.moderationLevel
+                permissions: user.moderator?.permissions ?? [],
+                moderationLevel: user.moderator?.moderationLevel,
             };
             break;
     }
@@ -261,12 +246,15 @@ const getMe = async (email: string) => {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         profile: roleSpecificData,
-        memberShipApplication: user.memberApplication || null
+        memberShipApplication: user.memberApplication ?? null,
     };
 };
 
+/* =====================================================
+   SOFT DELETE
+===================================================== */
 const SoftDelete = async (id: string) => {
-    return await prisma.user.update({
+    return prisma.user.update({
         where: { id },
         data: {
             isDelete: true,
@@ -276,38 +264,24 @@ const SoftDelete = async (id: string) => {
     });
 };
 
-
-export const createRoleBaseUser = async (
-    data: any
-) => {
-
+/* =====================================================
+   CREATE ROLE BASE USER
+===================================================== */
+export const createRoleBaseUser = async (data: any) => {
     const { email, role } = data;
 
-    // 1️⃣ Check user exists
-    const user = await prisma.user.findUnique({
-        where: { email },
-    });
-
-
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
         throw new ApiError(statusCode.NOT_FOUND, "User not found");
     }
-    // if (!user.isVerified || !user.isActive || user.isDelete) {
-    //     throw new ApiError(statusCode.BAD_REQUEST, `User is not eligible for ${role} assignment. because -
-    //     isVerified: ${user.isVerified},
-    //     isActive: ${user.isActive},
-    //     isDelete: ${user.isDelete}`);
-    // }
 
-    // 2️⃣ Prevent duplicate role creation
-    if (role === user.role) {
+    if (user.role === role) {
         throw new ApiError(
             statusCode.BAD_REQUEST,
             `${role} already exists for this user`
         );
     }
 
-    // 3️⃣ Role specific creation
     switch (role) {
         case UserRole.ADMIN:
             await prisma.admin.create({
@@ -319,15 +293,13 @@ export const createRoleBaseUser = async (
             });
             break;
 
-
-
         case UserRole.MENTOR:
             await prisma.mentor.create({
                 data: {
                     userId: user.id,
-                    expertise: data.expertise!,
-                    designation: data.designation!,
-                    experience: data.experience!,
+                    expertise: data.expertise,
+                    designation: data.designation,
+                    experience: data.experience,
                     subExpertise: [],
                 },
             });
@@ -344,27 +316,23 @@ export const createRoleBaseUser = async (
             break;
 
         default:
-            throw new ApiError(
-                statusCode.BAD_REQUEST,
-                "Invalid role"
-            );
+            throw new ApiError(statusCode.BAD_REQUEST, "Invalid role");
     }
 
-    // 4️⃣ Update user role
     await prisma.user.update({
         where: { id: user.id },
         data: { role },
     });
 
-    return {
-        message: `${role} created successfully`,
-    };
+    return { message: `${role} created successfully` };
 };
 
+/* =====================================================
+   UPDATE USER
+===================================================== */
 export const updateUser = async (req: Request) => {
     const file = req.file;
 
-    /* ---------- image upload ---------- */
     if (file) {
         const uploaded = await fileUploader.uploadToCloudinary(file);
         req.body.profileImage = uploaded.secure_url;
@@ -372,20 +340,17 @@ export const updateUser = async (req: Request) => {
 
     const { id, roleData, ...userData } = req.body;
 
-    /* ---------- parse roleData ---------- */
-    let parsedRoleData: any = null;
-    if (roleData && typeof roleData === "string") {
-        parsedRoleData = JSON.parse(roleData);
-    }
+    const parsedRoleData =
+        roleData && typeof roleData === "string"
+            ? JSON.parse(roleData)
+            : roleData;
 
     return prisma.$transaction(async (tx) => {
-        /* 1️⃣ find user */
         const user = await tx.user.findUnique({ where: { id } });
         if (!user) {
             throw new ApiError(404, "User not found");
         }
 
-        /* 2️⃣ update base user */
         if (Object.keys(userData).length > 0) {
             await tx.user.update({
                 where: { id },
@@ -393,97 +358,47 @@ export const updateUser = async (req: Request) => {
             });
         }
 
-        /* 3️⃣ role-specific update (NO blind upsert) */
         if (parsedRoleData && Object.keys(parsedRoleData).length > 0) {
             switch (user.role) {
-
-                /* ================= ADMIN ================= */
-                case "ADMIN": {
-                    const admin = await tx.admin.findUnique({
-                        where: { userId: id },
-                    });
-
-                    if (!admin) {
-                        throw new ApiError(404, "Admin not found");
-                    }
-
+                case UserRole.ADMIN:
                     await tx.admin.update({
                         where: { userId: id },
                         data: parsedRoleData,
                     });
                     break;
-                }
 
-                /* ================= MEMBER ================= */
-                case "MEMBER": {
-                    const member = await tx.member.findUnique({
-                        where: { userId: id },
-                    });
-
-                    if (!member) {
-                        throw new ApiError(404, "Member not found");
-                    }
-
-                    const {
-                        departmentId,
-                        sessionId,
-                        ...memberData
-                    } = parsedRoleData;
+                case UserRole.MEMBER: {
+                    const { departmentId, sessionId, ...memberData } =
+                        parsedRoleData;
 
                     await tx.member.update({
                         where: { userId: id },
                         data: {
                             ...memberData,
-
                             ...(departmentId && {
-                                department: {
-                                    connect: { id: departmentId },
-                                },
+                                department: { connect: { id: departmentId } },
                             }),
-
                             ...(sessionId && {
-                                session: {
-                                    connect: { id: sessionId },
-                                },
+                                session: { connect: { id: sessionId } },
                             }),
                         },
                     });
                     break;
                 }
 
-                /* ================= MENTOR ================= */
-                case "MENTOR": {
-                    const mentor = await tx.mentor.findUnique({
-                        where: { userId: id },
-                    });
-
-                    if (!mentor) {
-                        throw new ApiError(404, "Mentor not found");
-                    }
-
+                case UserRole.MENTOR:
                     await tx.mentor.update({
                         where: { userId: id },
                         data: parsedRoleData,
                     });
                     break;
-                }
 
-                /* ================= MODERATOR ================= */
-                case "MODERATOR": {
-                    const moderator = await tx.moderator.findUnique({
-                        where: { userId: id },
-                    });
-
-                    if (!moderator) {
-                        throw new ApiError(404, "Moderator not found");
-                    }
-
+                case UserRole.MODERATOR:
                     await tx.moderator.update({
                         where: { userId: id },
                         data: parsedRoleData,
                     });
                     break;
-                }
 
                 default:
                     throw new ApiError(400, "Invalid role");
@@ -494,10 +409,13 @@ export const updateUser = async (req: Request) => {
     });
 };
 
+/* =====================================================
+   EXPORT
+===================================================== */
 export const UserService = {
-    createRoleBaseUser,
     getAllUsers,
     getMe,
     SoftDelete,
-    updateUser
+    createRoleBaseUser,
+    updateUser,
 };
