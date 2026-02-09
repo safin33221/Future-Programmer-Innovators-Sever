@@ -21,9 +21,9 @@ model User {
     deletedAt         DateTime?
 
     // COMMON PROFILE FIELDS (moved from role tables)
-    profileImage String? // Store all profile images here
-    phone        String? // Common for all roles
-    bio          String? // Short bio for all
+    profileImage String?
+    phone        String?
+    bio          String?
 
     // Role-specific relations (one-to-one)
     admin     Admin?
@@ -46,10 +46,15 @@ model Admin {
     id         String     @id @default(uuid())
     userId     String     @unique
     adminLevel AdminLevel @default(BASIC)
+    skills     String[]
+    interests  String[]
+    github     String?
+    linkedin   String?
+    portfolio  String?
 
     // Admin-specific fields
-    permissions String[] // JSON array of permissions
-    department  String? // Which department they manage
+    permissions String[]
+    department  String?
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
