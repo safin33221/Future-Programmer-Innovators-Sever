@@ -31,3 +31,12 @@ export const connectRedis = async () => {
 
 }
 
+export const ensureRedis = async () => {
+    if (!redisClient.isOpen) {
+        await connectRedis();
+    }
+    if (!redisClient.isOpen) {
+        throw new Error("Redis client is closed");
+    }
+};
+

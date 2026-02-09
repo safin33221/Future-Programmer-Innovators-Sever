@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import prisma from "../../../lib/prisma.js";
-import { redisClient } from "../../config/redis.config.js";
+import { ensureRedis, redisClient } from "../../config/redis.config.js";
 import { sendEmail } from "../../utils/sendEmail.js";
 import ApiError from "../../errors/ApiError.js";
 import { statusCode } from "../../shared/statusCode.js";
@@ -40,6 +40,7 @@ const sendAuthOtp = async (email: string, name: string): Promise<void> => {
   const otp = generateOtp();
   const redisKey = getRedisKey(normalizedEmail);
 
+  await ensureRedis();
   await redisClient.set(
     redisKey,
     otp,
@@ -58,6 +59,7 @@ const sendAuthOtp = async (email: string, name: string): Promise<void> => {
 
 const verifyOtp = async (email: string, otp: string): Promise<void> => {
   const redisKey = getRedisKey(email);
+  await ensureRedis();
   const savedOtp = await redisClient.get(redisKey);
 
   if (!savedOtp) {
