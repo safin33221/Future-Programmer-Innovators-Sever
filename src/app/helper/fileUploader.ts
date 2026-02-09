@@ -4,10 +4,17 @@ import path from "path";
 import cloudinary from "../config/cloudinary.js";
 
 
-const uploadDir = path.join(process.cwd(), "uploads");
+const baseUploadDir = process.env.VERCEL ? "/tmp" : process.cwd();
+let uploadDir = path.join(baseUploadDir, "uploads");
 
 /* ensure upload dir exists */
-await fs.mkdir(uploadDir, { recursive: true });
+try {
+    await fs.mkdir(uploadDir, { recursive: true });
+} catch {
+    // Fallback to /tmp on read-only filesystems (e.g., serverless)
+    uploadDir = path.join("/tmp", "uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
     destination: (_, __, cb) => cb(null, uploadDir),
