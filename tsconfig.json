@@ -7,6 +7,14 @@
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
+    "typeRoots": [
+      "./src/types",
+      "./node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "express"
+    ],
     "skipLibCheck": true,
     "sourceMap": true,
     "declaration": true,

@@ -1,10 +1,11 @@
-import express, { Application, type Request, type Response } from 'express';
+/// <reference path="./types/express.d.ts" />
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import router from './app/routes/index.js';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middleware/globalErrorHandler.js';
-const app: Application = express();
+const app: import("express").Application = express();
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(
