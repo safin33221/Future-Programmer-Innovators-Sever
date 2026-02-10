@@ -69,7 +69,7 @@ enum AdminLevel {
     OWNER
 }
 
-enum moderationLevel {
+enum ModerationLevel {
     BASIC
     INTERMEDIATE
     SENIOR

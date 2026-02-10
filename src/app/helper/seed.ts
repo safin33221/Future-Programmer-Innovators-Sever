@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { AdminLevel, UserRole } from "@prisma/client";
 import prisma from "../../lib/prisma.js";
 import bcrypt from "bcrypt";
 import envConfig from "../config/env.config.js";
@@ -27,10 +27,10 @@ const seedSuperAdmin = async (): Promise<void> => {
                 lastName: "Admin",
                 email: envConfig.SUPER_ADMIN.SUPER_ADMIN_EMAIL,
                 password: hashedPassword,
-                role: UserRole.ADMIN,
+                role: UserRole.SUPER_ADMIN,
                 admin: {
                     create: {
-                        adminLevel: "SUPER",
+                        adminLevel: AdminLevel.OWNER,
                     },
                 },
             },

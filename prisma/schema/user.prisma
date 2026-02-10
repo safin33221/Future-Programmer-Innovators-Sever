@@ -130,7 +130,7 @@ model Moderator {
     // Moderator-specific
     permissions     String[]
     assignedForums  String[]
-    moderationLevel moderationLevel @default(BASIC)
+    moderationLevel ModerationLevel @default(BASIC)
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

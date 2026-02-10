@@ -1,9 +1,10 @@
 import express from 'express';
 import { userController } from './user.controller.js';
 
-import { UserRole } from '@prisma/client';
+
 import { auth } from '../../middleware/auth.js';
 import { fileUploader } from '../../helper/fileUploader.js';
+import { UserRole } from '@prisma/client';
 
 
 const router = express.Router()

@@ -1,11 +1,12 @@
-/// <reference path="./types/express.d.ts" />
-import express, { type Request, type Response } from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import router from './app/routes/index.js';
-import cookieParser from 'cookie-parser';
-import globalErrorHandler from './app/middleware/globalErrorHandler.js';
-const app: import("express").Application = express();
+import express, { Application, Request, Response } from "express";
+import cors from "cors";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+
+import router from "./app/routes/index.js";
+import globalErrorHandler from "./app/middleware/globalErrorHandler.js";
+
+const app: Application = express();
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(
@@ -14,35 +15,31 @@ app.use(
         credentials: true,
     })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(cookieParser());
 
-
-
-
-app.use('/api/v1', router)
+/* -------------------- ROUTES -------------------- */
+app.use("/api/v1", router);
 
 /* -------------------- HEALTH CHECK -------------------- */
-app.get('/', (req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
     res.status(200).json({
         success: true,
-        message: 'Server is running 🚀',
+        message: "Server is running 🚀",
     });
 });
 
-
-/* -------------------- Global Error Handler  -------------------- */
+/* -------------------- GLOBAL ERROR -------------------- */
 app.use(globalErrorHandler);
 
-
-
 /* -------------------- NOT FOUND -------------------- */
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
     res.status(404).json({
         success: false,
-        message: 'API not found',
+        message: "API not found",
     });
 });
 
