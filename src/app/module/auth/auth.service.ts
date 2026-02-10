@@ -11,6 +11,7 @@ const registerAsGuest = async (payload: {
     email: string;
     password: string;
 }) => {
+    console.log({ payload });
     // 🔐 Check email already exists
     const existingUser = await prisma.user.findUnique({
         where: { email: payload.email },
